@@ -4,19 +4,17 @@ on:
   push:
     branches:
       - master
-      - release
   pull_request:
     branches:
       - '*'
       - '*/*'
-      - '!l10n_master'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php: [7.2, 7.4]
+        php: [7.3]
     steps:
     - uses: actions/checkout@v1
 
