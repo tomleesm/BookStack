@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - tom
   pull_request:
     branches:
       - '*'
