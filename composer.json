@@ -22,6 +22,7 @@
         "intervention/image": "^2.5",
         "laravel/framework": "^6.18",
         "laravel/socialite": "^4.3.2",
+        "laravel/tinker": "^2.4",
         "league/commonmark": "^1.4",
         "league/flysystem-aws-s3-v3": "^1.0",
         "nunomaduro/collision": "^3.0",
