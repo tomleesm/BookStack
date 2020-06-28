@@ -35,41 +35,36 @@ class BookshelfController extends Controller
      */
     public function index()
     {
-        // 抓取目前使用者設定的書架顯示方式，清單或網格，預設是網格
-        $view = setting()->getForCurrentUser('bookshelves_view_type', config('app.views.bookshelves', 'grid'));
         // 抓取目前使用者設定的書架排列順序，預設是名稱
-        $sort = setting()->getForCurrentUser('bookshelves_sort', 'name');
+        // setting()->getForCurrentUser('bookshelves_sort', 'name');
         // 抓取目前使用者設定的書架排列方式，預設是由小到大
-        $order = setting()->getForCurrentUser('bookshelves_sort_order', 'asc');
-        // 排序界面顯示的文字
-        $sortOptions = [
-            'name' => trans('common.sort_name'),
-            'created_at' => trans('common.sort_created_at'),
-            'updated_at' => trans('common.sort_updated_at'),
-        ];
-
-        // 所有書架資料，一頁18個
-        $shelves = $this->bookshelfRepo->getAllPaginated(18, $sort, $order);
-        // 左邊的 Recently Viewed
-        $recents = $this->isSignedIn() ? $this->bookshelfRepo->getRecentlyViewed(4) : false;
-        // 左邊的 Popular Shelves
-        $popular = $this->bookshelfRepo->getPopular(4);
-        // 左邊的 New Shelves
-        $new = $this->bookshelfRepo->getRecentlyCreated(4);
+        // setting()->getForCurrentUser('bookshelves_sort_order', 'asc');
 
         // 刪除之前瀏覽的的書架資料表id (儲存在 session)
         $this->entityContextManager->clearShelfContext();
         // 設定 <title>
         $this->setPageTitle(trans('entities.shelves'));
         return view('shelves.index', [
-            'shelves' => $shelves,
-            'recents' => $recents,
-            'popular' => $popular,
-            'new' => $new,
-            'view' => $view,
-            'sort' => $sort,
-            'order' => $order,
-            'sortOptions' => $sortOptions,
+            // 所有書架資料，一頁18個
+            'shelves' => $this->bookshelfRepo->getAllPaginated(18,
+                             setting()->getForCurrentUser('bookshelves_sort', 'name'),
+                             setting()->getForCurrentUser('bookshelves_sort_order', 'asc')),
+            // 左邊的 Recently Viewed
+            'recents' => $this->isSignedIn() ? $this->bookshelfRepo->getRecentlyViewed(4) : false,
+            // 左邊的 Popular Shelves
+            'popular' => $this->bookshelfRepo->getPopular(4),
+            // 左邊的 New Shelves
+            'new' => $this->bookshelfRepo->getRecentlyCreated(4),
+            // 抓取目前使用者設定的書架顯示方式，清單或網格，預設是網格
+            'view' => setting()->getForCurrentUser('bookshelves_view_type', config('app.views.bookshelves', 'grid')),
+            'sort' => setting()->getForCurrentUser('bookshelves_sort', 'name'),
+            'order' => setting()->getForCurrentUser('bookshelves_sort_order', 'asc'),
+            // 排序界面顯示的文字
+            'sortOptions' => [
+                'name' => trans('common.sort_name'),
+                'created_at' => trans('common.sort_created_at'),
+                'updated_at' => trans('common.sort_updated_at')
+            ],
         ]);
     }
 
