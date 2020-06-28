@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - refactoring
   pull_request:
     branches:
       - '*'
