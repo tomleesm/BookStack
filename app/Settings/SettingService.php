@@ -181,11 +181,13 @@ class SettingService
      */
     public function put($key, $value)
     {
+        // $this->setting: app/Setting/Setting.php 存取 Setting 資料表的 eloquent
         $setting = $this->setting->firstOrNew([
             'setting_key' => $key
         ]);
         $setting->value = $value;
         $setting->save();
+        // 剛剛新增一筆資料，所以要刪除快取
         $this->clearFromCache($key);
         return true;
     }

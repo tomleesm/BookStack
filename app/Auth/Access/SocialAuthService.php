@@ -157,7 +157,11 @@ class SocialAuthService
     {
         $lowerName = strtolower($driver);
         $configPrefix = 'services.' . $lowerName . '.';
-        $config = [config($configPrefix . 'client_id'), config($configPrefix . 'client_secret'), config('services.callback_url')];
+        $config = [
+                    config($configPrefix . 'client_id'),
+                    config($configPrefix . 'client_secret'),
+                    config('services.callback_url')
+                  ];
         return !in_array(false, $config) && !in_array(null, $config);
     }
 

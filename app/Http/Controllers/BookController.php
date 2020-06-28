@@ -118,6 +118,7 @@ class BookController extends Controller
 
         Views::add($book);
         if ($request->has('shelf')) {
+            // 爲什麼要儲存書架的 id 到 session ?
             $this->entityContextManager->setShelfContext(intval($request->get('shelf')));
         }
 

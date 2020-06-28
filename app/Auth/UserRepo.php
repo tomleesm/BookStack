@@ -159,6 +159,9 @@ class UserRepo
      */
     public function create(array $data, bool $emailConfirmed = false): User
     {
+
+        // forceCreate(): Save a new model and return the instance. Allow mass-assignment.
+        // 這是 Eloquent/Builder 的 method
         return $this->user->forceCreate([
             'name'     => $data['name'],
             'email'    => $data['email'],

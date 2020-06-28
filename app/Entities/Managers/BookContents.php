@@ -112,11 +112,14 @@ class BookContents
     public function sortUsingMap(Collection $sortMap): Collection
     {
         // Load models into map
+        // loadModelsIntoSortMap() 一堆資料庫查詢後，放在區域變數，只有這個 function 可以存取，不知道用來做什麼的？
         $this->loadModelsIntoSortMap($sortMap);
+        // 準備好要重新排序的書籍collection
         $booksInvolved = $this->getBooksInvolvedInSort($sortMap);
 
         // Perform the sort
         $sortMap->each(function ($mapItem) {
+            // 把排序結果存到資料庫
             $this->applySortUpdates($mapItem);
         });
 

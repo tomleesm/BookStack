@@ -66,10 +66,16 @@ class LoginController extends Controller
      */
     public function getLogin(Request $request)
     {
+        // 抓取啓用的第三方登入網站 driver
         $socialDrivers = $this->socialAuthService->getActiveDrivers();
+        // Method of authentication to use
+        // Options: standard, ldap, saml2
+        // 'method' => env('AUTH_METHOD', 'standard'),
         $authMethod = config('auth.method');
 
+        // 如果有欄位 email
         if ($request->has('email')) {
+            // flashInput(): Flash an input array to the session
             session()->flashInput([
                 'email' => $request->get('email'),
                 'password' => (config('app.env') === 'demo') ? $request->get('password', '') : ''
@@ -77,7 +83,9 @@ class LoginController extends Controller
         }
 
         $previous = url()->previous('');
+        // 如果 app 不需要登入也能看 and 有上一次訪問的網址 and 上一次訪問的不是 /login
         if (setting('app-public') && $previous && $previous !== url('/login')) {
+            // 在 session url.intended 儲存上次訪問的網址，方便跳轉成功後自動跳回來
             redirect()->setIntendedUrl($previous);
         }
 

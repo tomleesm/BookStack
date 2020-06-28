@@ -10,7 +10,7 @@
             </div>
 
             <div class="text-center">
-                {!! $pages->links() !!}
+                {{ $pages->links() }}
             </div>
         </main>
     </div>

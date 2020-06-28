@@ -214,6 +214,8 @@ class ExportService
      */
     public function bookToPlainText(Book $book): string
     {
+        // getTree(bool showDrafts = false, bool renderPages = false)
+        // 注意：renderPages 參數並沒有用到，看來是之後要新增的功能
         $bookTree = (new BookContents($book))->getTree(false, true);
         $text = $book->name . "\n\n";
         foreach ($bookTree as $bookChild) {

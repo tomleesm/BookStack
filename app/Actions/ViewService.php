@@ -28,19 +28,25 @@ class ViewService
 
     /**
      * Add a view to the given entity.
+     * 計算個別會員的 Entitiy 點閱數，以產生頁面左邊欄位 Popular Shelves
      * @param \BookStack\Entities\Entity $entity
      * @return int
      */
     public function add(Entity $entity)
     {
+        // 目前登入的使用者
         $user = user();
+        // 如果沒有登入會員，或爲 guest 會員，自然不需要計算點閱數
         if ($user === null || $user->isDefault()) {
             return 0;
         }
+        // 抓取登入的使用者在這個 Entity 累積的點閱數
         $view = $entity->views()->where('user_id', '=', $user->id)->first();
         // Add view if model exists
         if ($view) {
+            // 點閱數遞增 1 ，並存到資料庫
             $view->increment('views');
+            // 回傳最新的點閱數
             return $view->views;
         }
 

@@ -20,24 +20,30 @@ class AuthTest extends BrowserKitTest
             ->seePageIs('/login');
     }
 
+    // 測試預設的帳號密碼是否有效
+    // login() 定義在這個 php 檔案最底下
     public function test_login()
     {
         $this->login('admin@admin.com', 'password')
             ->seePageIs('/');
     }
 
+    // 設定開放 app，則進入根目錄，不再自動跳轉到 /login，而是停在 /
     public function test_public_viewing()
     {
-        $settings = app(SettingService::class);
-        $settings->put('app-public', 'true');
+        // 設定開放 app
+        $this->setSettings(['app-public' => 'true']);
+        // 進入根目錄，不再自動跳轉到 /login，而是停在 /
         $this->visit('/')
             ->seePageIs('/')
             ->see('Log In');
     }
 
+    // 設定可以註冊會員，則進入 /login ，會顯示註冊連結
     public function test_registration_showing()
     {
         // Ensure registration form is showing
+        // 設定可以註冊會員
         $this->setSettings(['registration-enabled' => 'true']);
         $this->visit('/login')
             ->see('Sign up')
@@ -48,21 +54,28 @@ class AuthTest extends BrowserKitTest
     public function test_normal_registration()
     {
         // Set settings and get user instance
+        // 設定可以註冊會員
         $this->setSettings(['registration-enabled' => 'true']);
+        // 隨機產生一個 User 物件
+        // database/factories/ModelFactory.php 第一個 factory
         $user = factory(User::class)->make();
 
         // Test form and ensure user is created
+        // 輸入姓名、E-mail 和密碼以註冊會員
         $this->visit('/register')
             ->see('Sign Up')
             ->type($user->name, '#name')
             ->type($user->email, '#email')
             ->type($user->password, '#password')
             ->press('Create Account')
+            // 註冊後進入首頁，有看到註冊的會員名稱
             ->seePageIs('/')
             ->see($user->name)
+            // 會員資料有新增到資料庫
             ->seeInDatabase('users', ['name' => $user->name, 'email' => $user->email]);
     }
 
+    // 註冊會員時，如果欄位是空的，按下 Create Account 時會顯示錯誤訊息
     public function test_empty_registration_redirects_back_with_errors()
     {
         // Set settings and get user instance
@@ -75,6 +88,7 @@ class AuthTest extends BrowserKitTest
             ->seePageIs('/register');
     }
 
+    // 測試註冊會員時的欄位驗證功能
     public function test_registration_validation()
     {
         $this->setSettings(['registration-enabled' => 'true']);
@@ -90,6 +104,7 @@ class AuthTest extends BrowserKitTest
             ->seePageIs('/register');
     }
 
+    // 預設 /login 不顯示註冊連結
     public function test_sign_up_link_on_login()
     {
         $this->visit('/login')
@@ -104,41 +119,56 @@ class AuthTest extends BrowserKitTest
     public function test_confirmed_registration()
     {
         // Fake notifications
+        // 用 Mock 模擬通知。參考 Laravel 官方文件 testing/Mocking/Notification Fake
+        // 啓用一個 Mock
         Notification::fake();
 
         // Set settings and get user instance
-        $this->setSettings(['registration-enabled' => 'true', 'registration-confirmation' => 'true']);
+        // 設定可以註冊，以及註冊後顯示確認頁面
+        $this->setSettings([
+            'registration-enabled' => 'true',
+            'registration-confirmation' => 'true']
+        );
         $user = factory(User::class)->make();
 
         // Go through registration process
+        // 註冊會員
         $this->visit('/register')
             ->see('Sign Up')
             ->type($user->name, '#name')
             ->type($user->email, '#email')
             ->type($user->password, '#password')
             ->press('Create Account')
+            // 顯示確認，而不是預設的首頁
             ->seePageIs('/register/confirm')
+            // 確認有新增註冊的會員資料到資料庫
             ->seeInDatabase('users', ['name' => $user->name, 'email' => $user->email, 'email_confirmed' => false]);
 
         // Ensure notification sent
         $dbUser = User::where('email', '=', $user->email)->first();
+        // 用 Mock 模擬通知。參考 Laravel 官方文件 testing/Mocking/Notification Fake
+        // 通知已送出
         Notification::assertSentTo($dbUser, ConfirmEmail::class);
 
         // Test access and resend confirmation email
+        // 登入後，頁面停留在等候確認註冊的 E-mail
         $this->login($user->email, $user->password)
             ->seePageIs('/register/confirm/awaiting')
             ->see('Resend')
             ->visit('/books')
             ->seePageIs('/register/confirm/awaiting')
+            // 重送確認 E-mail
             ->press('Resend Confirmation Email');
 
         // Get confirmation and confirm notification matches
+        // 收到通知，且 token 和資料庫的一樣
         $emailConfirmation = DB::table('email_confirmations')->where('user_id', '=', $dbUser->id)->first();
         Notification::assertSentTo($dbUser, ConfirmEmail::class, function($notification, $channels) use ($emailConfirmation) {
             return $notification->token === $emailConfirmation->token;
         });
-        
+
         // Check confirmation email confirmation activation.
+        // 點選確認的網址以確認，接著自動登入會員，並進入首頁
         $this->visit('/register/confirm/' . $emailConfirmation->token)
             ->seePageIs('/')
             ->see($user->name)
@@ -146,9 +176,13 @@ class AuthTest extends BrowserKitTest
             ->seeInDatabase('users', ['name' => $dbUser->name, 'email' => $dbUser->email, 'email_confirmed' => true]);
     }
 
+    // 限制只能用某個網域的 E-mail 註冊會員
     public function test_restricted_registration()
     {
-        $this->setSettings(['registration-enabled' => 'true', 'registration-confirmation' => 'true', 'registration-restrict' => 'example.com']);
+        $this->setSettings(['registration-enabled' => 'true',
+                            'registration-confirmation' => 'true',
+                            'registration-restrict' => 'example.com']);
+
         $user = factory(User::class)->make();
         // Go through registration process
         $this->visit('/register')
@@ -178,9 +212,13 @@ class AuthTest extends BrowserKitTest
             ->seeText('Email Address Not Confirmed');
     }
 
+    // 設定不用註冊確認，且限制只能用某個網域的 E-mail 註冊會員
+    // 和上一個測試一樣，只是開頭的設定 registration-confirmation 不同
     public function test_restricted_registration_with_confirmation_disabled()
     {
-        $this->setSettings(['registration-enabled' => 'true', 'registration-confirmation' => 'false', 'registration-restrict' => 'example.com']);
+        $this->setSettings(['registration-enabled' => 'true',
+                            'registration-confirmation' => 'false',
+                            'registration-restrict' => 'example.com']);
         $user = factory(User::class)->make();
         // Go through registration process
         $this->visit('/register')
@@ -210,6 +248,7 @@ class AuthTest extends BrowserKitTest
             ->seeText('Email Address Not Confirmed');
     }
 
+    // 測試用管理員帳號登入後，新增一個使用者
     public function test_user_creation()
     {
         $user = factory(User::class)->make();
@@ -228,6 +267,7 @@ class AuthTest extends BrowserKitTest
             ->see($user->name);
     }
 
+    // 測試用管理員帳號登入後，修改一個普通使用者的姓名
     public function test_user_updating()
     {
         $user = $this->getNormalUser();
@@ -244,6 +284,7 @@ class AuthTest extends BrowserKitTest
             ->notSeeInDatabase('users', ['name' => $user->name]);
     }
 
+    // 測試使用者修改密碼
     public function test_user_password_update()
     {
         $user = $this->getNormalUser();
@@ -264,6 +305,7 @@ class AuthTest extends BrowserKitTest
             $this->assertTrue(Hash::check('newpassword', $userPassword));
     }
 
+    // 測試管理刪除使用者
     public function test_user_deletion()
     {
         $userDetails = factory(User::class)->make();
@@ -278,6 +320,7 @@ class AuthTest extends BrowserKitTest
             ->notSeeInDatabase('users', ['name' => $user->name]);
     }
 
+    // 只剩最後一個管理員帳號時，不能刪除它
     public function test_user_cannot_be_deleted_if_last_admin()
     {
         $adminRole = Role::getRole('admin');
@@ -301,6 +344,7 @@ class AuthTest extends BrowserKitTest
             ->see('You cannot delete the only admin');
     }
 
+    // 測試登出
     public function test_logout()
     {
         $this->asAdmin()
@@ -311,6 +355,7 @@ class AuthTest extends BrowserKitTest
             ->seePageIs('/login');
     }
 
+    // 測試重設密碼流程
     public function test_reset_password_flow()
     {
         Notification::fake();

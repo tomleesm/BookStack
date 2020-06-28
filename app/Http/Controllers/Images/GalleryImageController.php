@@ -29,12 +29,16 @@ class GalleryImageController extends Controller
      */
     public function list(Request $request)
     {
+        // 第幾頁
         $page = $request->get('page', 1);
-        $searchTerm = $request->get('search', null);
+        // 關鍵字，用來搜尋圖片的名稱
+        $keywordForSearch = $request->get('search', null);
+        // 圖片上傳到哪一頁的id
         $uploadedToFilter = $request->get('uploaded_to', null);
+        // chapter or page
         $parentTypeFilter = $request->get('filter_type', null);
 
-        $imgData = $this->imageRepo->getEntityFiltered('gallery', $parentTypeFilter, $page, 24, $uploadedToFilter, $searchTerm);
+        $imgData = $this->imageRepo->getEntityFiltered('gallery', $parentTypeFilter, $page, 24, $uploadedToFilter, $keywordForSearch);
         return response()->json($imgData);
     }
 

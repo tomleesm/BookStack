@@ -34,7 +34,9 @@ class Page extends BookChild
      */
     public function scopeVisible(Builder $query)
     {
+        // 還是草稿時，不顯示給其他人看
         $query = Permissions::enforceDraftVisiblityOnQuery($query);
+        // 呼叫 Entity::scopeVisible() 確保只會顯示該使用者有權限的 entity
         return parent::scopeVisible($query);
     }
 

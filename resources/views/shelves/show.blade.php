@@ -3,9 +3,7 @@
 @section('body')
 
     <div class="mb-s">
-        @include('partials.breadcrumbs', ['crumbs' => [
-            $shelf,
-        ]])
+        @include('partials.breadcrumbs', ['crumbs' => [ $shelf, ]])
     </div>
 
     <main class="card content-wrap">
