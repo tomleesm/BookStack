@@ -33,18 +33,17 @@ class SearchController extends Controller
      */
     public function search(Request $request)
     {
-        $searchTerm = $request->get('term');
-        $this->setPageTitle(trans('entities.search_for_term', ['term' => $searchTerm]));
+        $this->setPageTitle(trans('entities.search_for_term', ['term' => $request->get('term')]));
 
         $page = intval($request->get('page', '0')) ?: 1;
-        $nextPageLink = url('/search?term=' . urlencode($searchTerm) . '&page=' . ($page+1));
+        $nextPageLink = url('/search?term=' . urlencode($request->get('term')) . '&page=' . ($page + 1));
 
-        $results = $this->searchService->searchEntities($searchTerm, 'all', $page, 20);
+        $results = $this->searchService->searchEntities($request->get('term'), 'all', $page, 20);
 
         return view('search.all', [
             'entities'   => $results['results'],
             'totalResults' => $results['total'],
-            'searchTerm' => $searchTerm,
+            'searchTerm' => $request->get('term'),
             'hasNextPage' => $results['has_more'],
             'nextPageLink' => $nextPageLink
         ]);
