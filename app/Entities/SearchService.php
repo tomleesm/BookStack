@@ -91,7 +91,7 @@ class SearchService
                 continue;
             }
             $search = $this->searchEntityTable($terms, $entityType, $page, $count, $action);
-            $entityTotal = $this->searchEntityTable($terms, $entityType, $page, $count, $action, true);
+            $entityTotal = $this->searchEntityTableCount($terms, $entityType, $action);
             if ($entityTotal > $page * $count) {
                 $hasMore = true;
             }
@@ -117,17 +117,23 @@ class SearchService
     public function searchBook($bookId, $searchString)
     {
         $terms = $this->parseSearchString($searchString);
+        // 預設搜尋 page 和 chapter
         $entityTypes = ['page', 'chapter'];
+        // 如果有指定搜尋範圍: $terms['filters']['type'] = page|chapter|book
+        // 則轉成陣列 $entityTypesToSearch = ['page', 'chapter', 'book']
         $entityTypesToSearch = isset($terms['filters']['type']) ? explode('|', $terms['filters']['type']) : $entityTypes;
 
         $results = collect();
         foreach ($entityTypesToSearch as $entityType) {
+            // 只搜尋預設指定範圍，例如 book 就不會搜尋
             if (!in_array($entityType, $entityTypes)) {
                 continue;
             }
+            // 產生搜尋結果，設定範圍是這本書，只抓前20筆資料
             $search = $this->buildEntitySearchQuery($terms, $entityType)->where('book_id', '=', $bookId)->take(20)->get();
             $results = $results->merge($search);
         }
+        // 搜尋結果依照 score 遞減排列，只抓前20筆資料
         return $results->sortByDesc('score')->take(20);
     }
 
@@ -151,20 +157,28 @@ class SearchService
      * @param int $page
      * @param int $count
      * @param string $action
-     * @param bool $getCount Return the total count of the search
      * @return \Illuminate\Database\Eloquent\Collection|int|static[]
      */
-    public function searchEntityTable($terms, $entityType = 'page', $page = 1, $count = 20, $action = 'view', $getCount = false)
+    public function searchEntityTable($terms, $entityType = 'page', $page = 1, $count = 20, $action = 'view')
     {
         $query = $this->buildEntitySearchQuery($terms, $entityType, $action);
-        if ($getCount) {
-            return $query->count();
-        }
-
-        $query = $query->skip(($page-1) * $count)->take($count);
-        return $query->get();
+        return $query->skip(($page - 1) * $count)->take($count)->get();
     }
 
+    /**
+     * Count of search across a particular entity type.
+     * @param array $terms
+     * @param string $entityType
+     * @param int $page
+     * @param int $count
+     * @param string $action
+     * @return int
+     */
+    public function searchEntityTableCount($terms, $entityType = 'page', $action = 'view')
+    {
+        $query = $this->buildEntitySearchQuery($terms, $entityType, $action);
+        return $query->count();
+    }
     /**
      * Create a search query for an entity
      * @param array $terms
@@ -174,11 +188,17 @@ class SearchService
      */
     protected function buildEntitySearchQuery($terms, $entityType = 'page', $action = 'view')
     {
+        // 傳入字串 page，回傳 Page 物件
         $entity = $this->entityProvider->get($entityType);
+        // newQuery(): Get a new query builder for the model's table.
+        // 所以執行完 newQuery() ，就可以接著 ->where() 查詢這個 table 的資料，包含關聯的 tables
+        // 但是一旦執行 get() 或 all() 回傳資料，這個 Builder 就不能用了
         $entitySelect = $entity->newQuery();
 
         // Handle normal search terms
+        // 一般的關鍵字放在 $terms['search'][]
         if (count($terms['search']) > 0) {
+            // table search_terms 是內文索引
             $subQuery = $this->db->table('search_terms')->select('entity_id', 'entity_type', \DB::raw('SUM(score) as score'));
             $subQuery->where('entity_type', '=', $entity->getMorphClass());
             $subQuery->where(function (Builder $query) use ($terms) {
