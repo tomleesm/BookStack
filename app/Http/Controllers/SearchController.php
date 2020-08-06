@@ -33,11 +33,15 @@ class SearchController extends Controller
      */
     public function search(Request $request)
     {
+        // 設定所有 view 共用的變數 $pageTitle
         $this->setPageTitle(trans('entities.search_for_term', ['term' => $request->get('term')]));
 
+        // 確保頁碼 $page 是整數（包含 -1），未設定時預設爲 1
         $page = intval($request->get('page', '0')) ?: 1;
+        // 設定按鈕 MORE RESULTS 的網址
         $nextPageLink = url('/search?term=' . urlencode($request->get('term')) . '&page=' . ($page + 1));
 
+        // 產生搜尋結果
         $results = $this->searchService->searchEntities($request->get('term'), 'all', $page, 20);
 
         return view('search.all', [

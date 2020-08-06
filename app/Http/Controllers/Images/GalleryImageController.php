@@ -29,11 +29,12 @@ class GalleryImageController extends Controller
      */
     public function list(Request $request)
     {
+        // GET /images/gallery?page=1&uploaded_to=293
         // 第幾頁
         $page = $request->get('page', 1);
         // 關鍵字，用來搜尋圖片的名稱
         $keywordForSearch = $request->get('search', null);
-        // 圖片上傳到哪一頁的id
+        // 圖片上傳到哪一頁 Page 的id
         $uploadedToFilter = $request->get('uploaded_to', null);
         // chapter or page
         $parentTypeFilter = $request->get('filter_type', null);

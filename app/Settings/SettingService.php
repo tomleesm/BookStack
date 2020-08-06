@@ -36,16 +36,22 @@ class SettingService
      */
     public function get($key, $default = false)
     {
+        // 如果沒有預設值，就使用 app/Config/settinh-defaults.php 的設定
         if ($default === false) {
             $default = config('setting-defaults.' . $key, false);
         }
 
+        // 如果這個物件週期還沒結束，又存取，就用先前儲存的設定
         if (isset($this->localCache[$key])) {
             return $this->localCache[$key];
         }
 
+
+        // 從 $this->cache->get() 抓資料，沒有的話才從資料庫
+        // SELECT * FROM settings WHERE setting_key = '$key' LIMIT 1
         $value = $this->getValueFromStore($key, $default);
         $formatted = $this->formatValue($value, $default);
+        // 儲存到 property $localCache
         $this->localCache[$key] = $formatted;
         return $formatted;
     }
@@ -58,6 +64,8 @@ class SettingService
      */
     protected function getFromSession($key, $default = false)
     {
+        // 從這個登入的使用者 session 中抓取 $key = user:123:bookshelves_view_type 的資料
+        // 否則回傳 $default 值
         $value = session()->get($key, $default);
         $formatted = $this->formatValue($value, $default);
         return $formatted;
@@ -72,9 +80,11 @@ class SettingService
      */
     public function getUser($user, $key, $default = false)
     {
+        // 目前登入的使用者的資料庫欄位 system_name 是否爲 public
         if ($user->isDefault()) {
             return $this->getFromSession($key, $default);
         }
+        // userKey(): 回傳字串 user:123:bookshelves_view_type
         return $this->get($this->userKey($user->id, $key), $default);
     }
 
@@ -86,6 +96,7 @@ class SettingService
      */
     public function getForCurrentUser($key, $default = false)
     {
+        // 目前登入的使用者的
         return $this->getUser(user(), $key, $default);
     }
 
@@ -135,6 +146,8 @@ class SettingService
      * @param $default
      * @return mixed
      */
+    // $value 是字串 true 或 false，回傳布林值 true 或 false
+    // $value 是空值，則回傳 $default
     protected function formatValue($value, $default)
     {
         // Change string booleans to actual booleans

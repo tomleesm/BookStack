@@ -28,6 +28,8 @@ class BookshelfRepo
      */
     public function getAllPaginated(int $count = 20, string $sort = 'name', string $order = 'asc'): LengthAwarePaginator
     {
+        // visible(): 呼叫 app/Entities/Entity.php 的 scopeVisible()
+        // https://laravel.com/docs/6.x/eloquent#local-scopes
         return Bookshelf::visible()
             ->with('visibleBooks')
             ->orderBy($sort, $order)

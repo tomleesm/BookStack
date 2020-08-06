@@ -36,6 +36,7 @@ class ImageController extends Controller
      */
     public function showImage(string $path)
     {
+        // 設定儲存檔案的位置 /storage/uploads/images/$path
         $path = storage_path('uploads/images/' . $path);
         if (!file_exists($path)) {
             abort(404);

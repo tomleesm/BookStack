@@ -129,11 +129,20 @@ class HomeController extends Controller
      */
     public function getRobots()
     {
+        // 讀取資料庫中是否需要登入才能瀏覽的設定，預設是不用
         $sitePublic = setting('app-public', false);
+        // 讀取 app/Config/app.php 中的 allow_robots 設定
         $allowRobots = config('app.allow_robots');
         if ($allowRobots === null) {
             $allowRobots = $sitePublic;
         }
+        /**
+         * 顯示純文字檔如下
+         *
+         * User-agent: *
+         * Disallow: / <-- if $allowRobots
+         *
+         **/
         return response()
             ->view('common.robots', ['allowRobots' => $allowRobots])
             ->header('Content-Type', 'text/plain');

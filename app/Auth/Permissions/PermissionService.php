@@ -80,6 +80,11 @@ class PermissionService
         $this->db = $connection;
     }
 
+    public function setCurrentAction($action = 'view')
+    {
+        $this->currentAction = $action;
+    }
+
     /**
      * Prepare the local entity cache and ensure it's empty
      * @param \BookStack\Entities\Entity[] $entities
@@ -639,6 +644,12 @@ class PermissionService
     public function restrictEntityQuery(Builder $query, string $ability = 'view'): Builder
     {
         $this->clean();
+        /***
+          SELECT * FROM bookshelves
+          WHERE (SELECT 1 FROM jointPermissions WHERE EXIST (
+
+          ))
+        ***/
         return $query->where(function (Builder $parentQuery) use ($ability) {
             $parentQuery->whereHas('jointPermissions', function (Builder $permissionQuery) use ($ability) {
                 $permissionQuery->whereIn('role_id', $this->getRoles())
