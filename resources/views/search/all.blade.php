@@ -72,7 +72,7 @@
                         <button type="submit">@icon('search')</button>
                     </form>
 
-                    <h6 class="text-muted">{{ trans_choice('entities.search_total_results_found', $totalResults, ['count' => $totalResults]) }}</h6>
+                    <h6 class="text-muted">{{ trans_choice('entities.search_total_results_found', $total, ['total' => $total]) }}</h6>
                     <div class="book-contents">
                         @include('partials.entity-list', ['entities' => $entities, 'showPath' => true])
                     </div>

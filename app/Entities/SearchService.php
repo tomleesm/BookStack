@@ -112,7 +112,6 @@ class SearchService
 
         return [
             'total' => $total,
-            'count' => count($results),
             'has_more' => $hasMore,
             'results' => $results->sortByDesc('score')->values(),
         ];
