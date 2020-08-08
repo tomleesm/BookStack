@@ -42,7 +42,7 @@ return [
 
     // Search
     'search_results' => 'Search Results',
-    'search_total_results_found' => ':count result found|:count total results found',
+    'search_total_results_found' => ':total result found|:total total results found',
     'search_clear' => 'Clear Search',
     'search_no_pages' => 'No pages matched this search',
     'search_for_term' => 'Search for :term',
