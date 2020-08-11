@@ -72,12 +72,12 @@
                         <button type="submit">@icon('search')</button>
                     </form>
 
-                    <h6 class="text-muted">{{ trans_choice('entities.search_total_results_found', $total, ['total' => $total]) }}</h6>
+                    <h6 class="text-muted">{{ trans_choice('entities.search_total_results_found', $entities->total(), ['total' => $entities->total()]) }}</h6>
                     <div class="book-contents">
                         @include('partials.entity-list', ['entities' => $entities, 'showPath' => true])
                     </div>
 
-                    @if($hasNextPage)
+                    @if($entities->hasMorePages())
                         <div class="text-right mt-m">
                             <a href="{{ $nextPageLink }}" class="button outline">{{ trans('entities.search_more') }}</a>
                         </div>

@@ -5,8 +5,9 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\Str;
+use BookStack\Facades\Collection;
 
 class SearchService
 {
@@ -96,24 +97,16 @@ class SearchService
         $entityTypesToSearch = $this->getEntityTypesToSearch($whichEntityTypeToSearch, $searchOpts);
 
         $results = collect();
-        $total = 0;
-        $hasMore = false;
-
         foreach ($entityTypesToSearch as $entityType) {
-            $search = $this->buildEntitySearchQuery($searchOpts, $entityType, $action)
-                                               ->skip(($page-1) * $count)->take($count)->get();
-            $entityTotal = $this->buildEntitySearchQuery($searchOpts, $entityType, $action)->count();
-            if ($entityTotal > $page * $count) {
-                $hasMore = true;
-            }
-            $total += $entityTotal;
+            $search = $this->buildEntitySearchQuery($searchOpts, $entityType, $action)->get();
             $results = $results->merge($search);
         }
 
+        $results = $results->sortByDesc('score')->values();
+        $results = Collection::paginate($results, 20);
+
         return [
-            'total' => $total,
-            'has_more' => $hasMore,
-            'results' => $results->sortByDesc('score')->values(),
+            'results' => $results
         ];
     }
 
@@ -121,7 +114,7 @@ class SearchService
     /**
      * Search a book for entities
      */
-    public function searchBook(int $bookId, string $searchString): Collection
+    public function searchBook(int $bookId, string $searchString): BaseCollection
     {
         $opts = SearchOptions::fromString($searchString);
         $entityTypes = ['page', 'chapter'];
@@ -141,7 +134,7 @@ class SearchService
     /**
      * Search a book for entities
      */
-    public function searchChapter(int $chapterId, string $searchString): Collection
+    public function searchChapter(int $chapterId, string $searchString): BaseCollection
     {
         $opts = SearchOptions::fromString($searchString);
         $pages = $this->buildEntitySearchQuery($opts, 'page')->where('chapter_id', '=', $chapterId)->take(20)->get();

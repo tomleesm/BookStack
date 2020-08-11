@@ -42,9 +42,7 @@ class SearchController extends Controller
 
         return view('search.all', [
             'entities'   => $results['results'],
-            'total' => $results['total'],
             'searchTerm' => $fullSearchString,
-            'hasNextPage' => $results['has_more'],
             'nextPageLink' => $this->getNextPageLink($fullSearchString),
             'options' => $searchOpts,
         ]);
