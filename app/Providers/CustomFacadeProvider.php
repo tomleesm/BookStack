@@ -8,6 +8,7 @@ use BookStack\Auth\Permissions\PermissionService;
 use BookStack\Settings\SettingService;
 use BookStack\Uploads\ImageService;
 use Illuminate\Support\ServiceProvider;
+use BookStack\Entities\CollectionService;
 
 class CustomFacadeProvider extends ServiceProvider
 {
@@ -46,6 +47,10 @@ class CustomFacadeProvider extends ServiceProvider
 
         $this->app->singleton('permissions', function () {
             return $this->app->make(PermissionService::class);
+        });
+
+        $this->app->singleton('collection', function () {
+            return $this->app->make(CollectionService::class);
         });
     }
 }
