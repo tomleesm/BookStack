@@ -58,10 +58,10 @@ class SearchService
 
     private function getEntityTypesToSearch($whichEntityTypeToSearch, $searchOpts){
         $types = array_keys($this->entityProvider->all());
-        if ($whichEntityTypeToSearch !== 'all') {
-            $types = $whichEntityTypeToSearch;
-        } else if ($this->existFilterType($searchOpts)) {
+        if ($this->existFilterType($searchOpts)) {
             $types = explode('|', $searchOpts->filters['type']);
+        } else if($whichEntityTypeToSearch !== 'all') {
+            $types = $whichEntityTypeToSearch;
         }
 
         return $this->filterEntityTypes($types);
@@ -112,13 +112,10 @@ class SearchService
     {
         $opts = SearchOptions::fromString($searchString);
         $entityTypes = ['page', 'chapter'];
-        $entityTypesToSearch = isset($opts->filters['type']) ? explode('|', $opts->filters['type']) : $entityTypes;
+        $entityTypesToSearch = $this->getEntityTypesToSearch($entityTypes, $opts);
 
         $results = collect();
         foreach ($entityTypesToSearch as $entityType) {
-            if (!in_array($entityType, $entityTypes)) {
-                continue;
-            }
             $search = $this->buildEntitySearchQuery($opts, $entityType)->where('book_id', '=', $bookId)->take(20)->get();
             $results = $results->merge($search);
         }
