@@ -58,6 +58,7 @@ class SearchController extends Controller
     {
         $term = $request->get('term', '');
         $results = $this->searchService->searchBook($bookId, $term);
+        $results = Collection::paginate($results, 20);
         return view('partials.entity-list', ['entities' => $results]);
     }
 
@@ -68,6 +69,7 @@ class SearchController extends Controller
     {
         $term = $request->get('term', '');
         $results = $this->searchService->searchChapter($chapterId, $term);
+        $results = Collection::paginate($results, 20);
         return view('partials.entity-list', ['entities' => $results]);
     }
 
