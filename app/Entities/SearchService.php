@@ -116,10 +116,13 @@ class SearchService
 
         $results = collect();
         foreach ($entityTypesToSearch as $entityType) {
-            $search = $this->buildEntitySearchQuery($opts, $entityType)->where('book_id', '=', $bookId)->take(20)->get();
+            $search = $this->buildEntitySearchQuery($opts, $entityType)
+                           ->where('book_id', '=', $bookId)
+                           ->get();
             $results = $results->merge($search);
         }
-        return $results->sortByDesc('score')->take(20);
+
+        return $results->sortByDesc('score')->values();
     }
 
     /**
@@ -128,8 +131,11 @@ class SearchService
     public function searchChapter(int $chapterId, string $searchString): Collection
     {
         $opts = SearchOptions::fromString($searchString);
-        $pages = $this->buildEntitySearchQuery($opts, 'page')->where('chapter_id', '=', $chapterId)->take(20)->get();
-        return $pages->sortByDesc('score');
+        $pages = $this->buildEntitySearchQuery($opts, 'page')
+                      ->where('chapter_id', '=', $chapterId)
+                      ->get();
+
+        return $pages->sortByDesc('score')->values();
     }
 
     /**
