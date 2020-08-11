@@ -5,9 +5,8 @@ use Illuminate\Database\Connection;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
-use Illuminate\Support\Collection as BaseCollection;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
-use BookStack\Facades\Collection;
 
 class SearchService
 {
@@ -91,7 +90,7 @@ class SearchService
      * The provided count is for each entity to search,
      * Total returned could can be larger and not guaranteed.
      */
-    public function searchEntities(SearchOptions $searchOpts, string $whichEntityTypeToSearch = 'all', int $page = 1, int $count = 20, string $action = 'view'): array
+    public function searchEntities(SearchOptions $searchOpts, string $whichEntityTypeToSearch = 'all', string $action = 'view')
     {
 
         $entityTypesToSearch = $this->getEntityTypesToSearch($whichEntityTypeToSearch, $searchOpts);
@@ -102,19 +101,14 @@ class SearchService
             $results = $results->merge($search);
         }
 
-        $results = $results->sortByDesc('score')->values();
-        $results = Collection::paginate($results, 20);
-
-        return [
-            'results' => $results
-        ];
+        return $results->sortByDesc('score')->values();
     }
 
 
     /**
      * Search a book for entities
      */
-    public function searchBook(int $bookId, string $searchString): BaseCollection
+    public function searchBook(int $bookId, string $searchString): Collection
     {
         $opts = SearchOptions::fromString($searchString);
         $entityTypes = ['page', 'chapter'];
@@ -134,7 +128,7 @@ class SearchService
     /**
      * Search a book for entities
      */
-    public function searchChapter(int $chapterId, string $searchString): BaseCollection
+    public function searchChapter(int $chapterId, string $searchString): Collection
     {
         $opts = SearchOptions::fromString($searchString);
         $pages = $this->buildEntitySearchQuery($opts, 'page')->where('chapter_id', '=', $chapterId)->take(20)->get();

@@ -8,6 +8,7 @@ use BookStack\Entities\Managers\EntityContext;
 use BookStack\Entities\SearchService;
 use BookStack\Entities\SearchOptions;
 use Illuminate\Http\Request;
+use BookStack\Facades\Collection;
 
 class SearchController extends Controller
 {
@@ -38,10 +39,11 @@ class SearchController extends Controller
         $fullSearchString = $searchOpts->toString();
         $this->setPageTitle(trans('entities.search_for_term', ['term' => $fullSearchString]));
 
-        $results = $this->searchService->searchEntities($searchOpts, 'all', $this->getPageNumber(), 20);
+        $results = $this->searchService->searchEntities($searchOpts, 'all');
+        $results = Collection::paginate($results, 20);
 
         return view('search.all', [
-            'entities'   => $results['results'],
+            'entities'   => $results,
             'searchTerm' => $fullSearchString,
             'nextPageLink' => $this->getNextPageLink($fullSearchString),
             'options' => $searchOpts,
@@ -82,10 +84,12 @@ class SearchController extends Controller
         // Search for entities otherwise show most popular
         if ($searchTerm !== false) {
             $searchTerm .= ' {type:'. implode('|', $entityTypes) .'}';
-            $entities = $this->searchService->searchEntities(SearchOptions::fromString($searchTerm), 'all', 1, 20, $permission)['results'];
+            $entities = $this->searchService->searchEntities(SearchOptions::fromString($searchTerm), 'all', $permission);
         } else {
             $entities = $this->viewService->getPopular(20, 0, $entityTypes, $permission);
         }
+
+        $entities = Collection::paginate($entities, 20);
 
         return view('search.entity-ajax-list', ['entities' => $entities]);
     }
