@@ -1,6 +1,7 @@
 <?php namespace BookStack\Entities;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SearchOptions
 {
@@ -45,15 +46,26 @@ class SearchOptions
      */
     public static function fromRequest(Request $request): SearchOptions
     {
+        // search for nothing
         if (!$request->has('search') && !$request->has('term')) {
             return static::fromString('');
         }
 
+        // search from SearchController@searchEntitiesAjax
+        if(Str::contains(url()->full(), '/ajax/search/entities')) {
+            return static::ajaxSearch($request);
+        }
+
+        // search from navigation bar
         if ($request->has('term')) {
             return static::fromString($request->get('term'));
         }
 
-        return $this->advanceSearch($request);
+        // search from advance search
+        if($request->has('search') && $request->has('term')) {
+            return static::advanceSearch($request);
+        }
+
     }
 
     /**
@@ -124,7 +136,7 @@ class SearchOptions
         return $string;
     }
 
-    private function advanceSearch($request)
+    private static function advanceSearch($request)
     {
         $instance = new static();
         $inputs = $request->only(['search', 'types', 'filters', 'exact', 'tags']);
@@ -142,6 +154,14 @@ class SearchOptions
         }
 
         return $instance;
+    }
+
+    private static function ajaxSearch($request)
+    {
+        $searchTerm =  $request->get('term');
+        $entityTypes = $request->filled('types') ? explode(',', $request->get('types')) : ['page', 'chapter', 'book', 'bookshelf'];
+        $searchTerm .= ' {type:'. implode('|', $entityTypes) .'}';
+        return static::fromString(($searchTerm));
     }
 
 }
