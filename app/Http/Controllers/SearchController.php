@@ -87,8 +87,7 @@ class SearchController extends Controller
         if (empty($searchTerm)) {
             $entities = $this->viewService->getPopular(20, 0, $entityTypes, $permission);
         } else {
-            $searchTerm .= ' {type:'. implode('|', $entityTypes) .'}';
-            $entities = $this->searchService->searchEntities(SearchOptions::fromString($searchTerm), 'all', $permission);
+            $entities = $this->searchService->searchEntities(SearchOptions::fromRequest($request), 'all', $permission);
         }
 
         $entities = Collection::paginate($entities, 20);
