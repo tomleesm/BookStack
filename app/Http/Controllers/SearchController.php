@@ -80,15 +80,15 @@ class SearchController extends Controller
     public function searchEntitiesAjax(Request $request)
     {
         $entityTypes = $request->filled('types') ? explode(',', $request->get('types')) : ['page', 'chapter', 'book'];
-        $searchTerm =  $request->get('term', false);
+        $searchTerm =  $request->get('term');
         $permission = $request->get('permission', 'view');
 
         // Search for entities otherwise show most popular
-        if ($searchTerm !== false) {
+        if (empty($searchTerm)) {
+            $entities = $this->viewService->getPopular(20, 0, $entityTypes, $permission);
+        } else {
             $searchTerm .= ' {type:'. implode('|', $entityTypes) .'}';
             $entities = $this->searchService->searchEntities(SearchOptions::fromString($searchTerm), 'all', $permission);
-        } else {
-            $entities = $this->viewService->getPopular(20, 0, $entityTypes, $permission);
         }
 
         $entities = Collection::paginate($entities, 20);
