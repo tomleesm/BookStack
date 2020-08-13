@@ -53,21 +53,7 @@ class SearchOptions
             return static::fromString($request->get('term'));
         }
 
-        $instance = new static();
-        $inputs = $request->only(['search', 'types', 'filters', 'exact', 'tags']);
-        $instance->searches = explode(' ', $inputs['search'] ?? []);
-        $instance->exacts = array_filter($inputs['exact'] ?? []);
-        $instance->tags = array_filter($inputs['tags'] ?? []);
-        foreach (($inputs['filters'] ?? []) as $filterKey => $filterVal) {
-            if (empty($filterVal)) {
-                continue;
-            }
-            $instance->filters[$filterKey] = $filterVal === 'true' ? '' : $filterVal;
-        }
-        if (isset($inputs['types']) && count($inputs['types']) < 4) {
-            $instance->filters['type'] = implode('|', $inputs['types']);
-        }
-        return $instance;
+        return $this->advanceSearch($request);
     }
 
     /**
@@ -136,6 +122,26 @@ class SearchOptions
         }
 
         return $string;
+    }
+
+    private function advanceSearch($request)
+    {
+        $instance = new static();
+        $inputs = $request->only(['search', 'types', 'filters', 'exact', 'tags']);
+        $instance->searches = explode(' ', $inputs['search'] ?? []);
+        $instance->exacts = array_filter($inputs['exact'] ?? []);
+        $instance->tags = array_filter($inputs['tags'] ?? []);
+        foreach (($inputs['filters'] ?? []) as $filterKey => $filterVal) {
+            if (empty($filterVal)) {
+                continue;
+            }
+            $instance->filters[$filterKey] = $filterVal === 'true' ? '' : $filterVal;
+        }
+        if (isset($inputs['types']) && count($inputs['types']) < 4) {
+            $instance->filters['type'] = implode('|', $inputs['types']);
+        }
+
+        return $instance;
     }
 
 }
