@@ -29,10 +29,10 @@ class SearchOptions
     /**
      * Create a new instance from a search string.
      */
-    public static function fromString(string $search): SearchOptions
+    public function fromString(string $search): SearchOptions
     {
-        $decoded = static::decode($search);
-        $instance = new static();
+        $decoded = $this->decode($search);
+        $instance = new self();
         foreach ($decoded as $type => $value) {
             $instance->$type = $value;
         }
@@ -44,26 +44,26 @@ class SearchOptions
      * Will look for a classic string term and use that
      * Otherwise we'll use the details from an advanced search form.
      */
-    public static function fromRequest(Request $request): SearchOptions
+    public function fromRequest(Request $request): SearchOptions
     {
         // search for nothing
         if (!$request->has('search') && !$request->has('term')) {
-            return static::fromString('');
+            return $this->fromString('');
         }
 
         // search from SearchController@searchEntitiesAjax
         if(Str::contains(url()->full(), '/ajax/search/entities')) {
-            return static::ajaxSearch($request);
+            return $this->ajaxSearch($request);
         }
 
         // search from navigation bar
         if ($request->has('term')) {
-            return static::fromString($request->get('term'));
+            return $this->fromString($request->get('term'));
         }
 
         // search from advance search
         if($request->has('search') && $request->has('term')) {
-            return static::advanceSearch($request);
+            return $this->advanceSearch($request);
         }
 
     }
@@ -71,7 +71,7 @@ class SearchOptions
     /**
      * Decode a search string into an array of terms.
      */
-    protected static function decode(string $searchString): array
+    protected function decode(string $searchString): array
     {
         $terms = [
             'searches' => [],
@@ -136,9 +136,9 @@ class SearchOptions
         return $string;
     }
 
-    private static function advanceSearch($request)
+    private function advanceSearch($request)
     {
-        $instance = new static();
+        $instance = new self();
         $inputs = $request->only(['search', 'types', 'filters', 'exact', 'tags']);
         $instance->searches = explode(' ', $inputs['search'] ?? []);
         $instance->exacts = array_filter($inputs['exact'] ?? []);
@@ -156,12 +156,12 @@ class SearchOptions
         return $instance;
     }
 
-    private static function ajaxSearch($request)
+    private function ajaxSearch($request)
     {
         $searchTerm =  $request->get('term');
         $entityTypes = $request->filled('types') ? explode(',', $request->get('types')) : ['page', 'chapter', 'book', 'bookshelf'];
         $searchTerm .= ' {type:'. implode('|', $entityTypes) .'}';
-        return static::fromString(($searchTerm));
+        return $this->fromString(($searchTerm));
     }
 
 }

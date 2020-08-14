@@ -7,7 +7,7 @@ class SearchOptionsTest extends TestCase
 {
     public function test_from_string_parses_a_search_string_properly()
     {
-        $options = SearchOptions::fromString('cat "dog" [tag=good] {is_tree}');
+        $options = (new SearchOptions)->fromString('cat "dog" [tag=good] {is_tree}');
 
         $this->assertEquals(['cat'], $options->searches);
         $this->assertEquals(['dog'], $options->exacts);
@@ -32,7 +32,7 @@ class SearchOptionsTest extends TestCase
 
     public function test_correct_filter_values_are_set_from_string()
     {
-        $opts = SearchOptions::fromString('{is_tree} {name:dan} {cat:happy}');
+        $opts = (new SearchOptions)->fromString('{is_tree} {name:dan} {cat:happy}');
 
         $this->assertEquals([
             'is_tree' => '',
