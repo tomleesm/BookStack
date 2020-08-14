@@ -35,7 +35,7 @@ class SearchController extends Controller
      */
     public function search(Request $request)
     {
-        $searchOpts = SearchOptions::fromRequest($request);
+        $searchOpts = (new SearchOptions)->fromRequest($request);
         $fullSearchString = $searchOpts->toString();
         $this->setPageTitle(trans('entities.search_for_term', ['term' => $fullSearchString]));
 
@@ -56,8 +56,7 @@ class SearchController extends Controller
      */
     public function searchBook(Request $request, int $bookId)
     {
-        $term = $request->get('term', '');
-        $results = $this->searchService->searchBook($bookId, $term);
+        $results = $this->searchService->searchBook($bookId);
         $results = Collection::paginate($results, 20);
         return view('partials.entity-list', ['entities' => $results]);
     }
@@ -67,8 +66,7 @@ class SearchController extends Controller
      */
     public function searchChapter(Request $request, int $chapterId)
     {
-        $term = $request->get('term', '');
-        $results = $this->searchService->searchChapter($chapterId, $term);
+        $results = $this->searchService->searchChapter($chapterId);
         $results = Collection::paginate($results, 20);
         return view('partials.entity-list', ['entities' => $results]);
     }

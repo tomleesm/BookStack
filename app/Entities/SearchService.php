@@ -95,7 +95,7 @@ class SearchService
     public function searchEntities(string $whichEntityTypeToSearch = 'all', string $action = 'view')
     {
 
-        $searchOptions = SearchOptions::fromRequest(request());
+        $searchOptions = (new SearchOptions)->fromRequest(request());
         $entityTypesToSearch = $this->getEntityTypesToSearch($whichEntityTypeToSearch, $searchOptions);
 
         $results = collect();
@@ -111,9 +111,9 @@ class SearchService
     /**
      * Search a book for entities
      */
-    public function searchBook(int $bookId, string $searchString): Collection
+    public function searchBook(int $bookId): Collection
     {
-        $searchOptions = SearchOptions::fromString($searchString);
+        $searchOptions = (new SearchOptions)->fromRequest(request());
         $entityTypes = ['page', 'chapter'];
         $entityTypesToSearch = $this->getEntityTypesToSearch($entityTypes, $searchOptions);
 
@@ -131,9 +131,9 @@ class SearchService
     /**
      * Search a book for entities
      */
-    public function searchChapter(int $chapterId, string $searchString): Collection
+    public function searchChapter(int $chapterId): Collection
     {
-        $searchOptions = SearchOptions::fromString($searchString);
+        $searchOptions = (new SearchOptions)->fromRequest(request());
         $pages = $this->buildEntitySearchQuery($searchOptions, 'page')
                       ->where('chapter_id', '=', $chapterId)
                       ->get();
@@ -210,26 +210,17 @@ class SearchService
     protected function applyTagSearch(EloquentBuilder $query, string $tagTerm): EloquentBuilder
     {
         preg_match("/^(.*?)((".$this->getRegexEscapedOperators().")(.*?))?$/", $tagTerm, $tagSplit);
+
         $query->whereHas('tags', function (EloquentBuilder $query) use ($tagSplit) {
             $tagName = $tagSplit[1];
             $tagOperator = count($tagSplit) > 2 ? $tagSplit[3] : '';
             $tagValue = count($tagSplit) > 3 ? $tagSplit[4] : '';
             $validOperator = in_array($tagOperator, $this->queryOperators);
-            if (!empty($tagOperator) && !empty($tagValue) && $validOperator) {
-                if (!empty($tagName)) {
-                    $query->where('name', '=', $tagName);
-                }
-                if (is_numeric($tagValue) && $tagOperator !== 'like') {
-                    // We have to do a raw sql query for this since otherwise PDO will quote the value and MySQL will
-                    // search the value as a string which prevents being able to do number-based operations
-                    // on the tag values. We ensure it has a numeric value and then cast it just to be sure.
-                    $tagValue = (float) trim($query->getConnection()->getPdo()->quote($tagValue), "'");
-                    $query->whereRaw("value ${tagOperator} ${tagValue}");
-                } else {
-                    $query->where('value', $tagOperator, $tagValue);
-                }
-            } else {
+
+            if ( ( empty($tagValue) || ( ! $validOperator ) ) && ( ! empty($tagName) ) ) {
                 $query->where('name', '=', $tagName);
+            } else {
+                $query->where('value', $tagOperator, $tagValue);
             }
         });
         return $query;
