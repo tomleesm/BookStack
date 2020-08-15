@@ -153,24 +153,23 @@ class SearchOptions
 
     private function advanceSearch($request)
     {
-        $instance = new self();
         $inputs = $request->only(['search', 'types', 'filters', 'exact', 'tags']);
-        $instance->searches = explode(' ', $inputs['search'] ?? []);
-        $instance->exacts = array_filter($inputs['exact'] ?? []);
-        $instance->tags = array_filter($inputs['tags'] ?? []);
+        $this->searches = explode(' ', $inputs['search'] ?? []);
+        $this->exacts = array_filter($inputs['exact'] ?? []);
+        $this->tags = array_filter($inputs['tags'] ?? []);
         foreach (($inputs['filters'] ?? []) as $filterKey => $filterVal) {
             if (empty($filterVal)) {
                 continue;
             }
-            $instance->filters[$filterKey] = $filterVal === 'true' ? '' : $filterVal;
+            $this->filters[$filterKey] = $filterVal === 'true' ? '' : $filterVal;
         }
         if (isset($inputs['types']) && count($inputs['types']) < 4) {
-            $instance->filters['type'] = implode('|', $inputs['types']);
+            $this->filters['type'] = implode('|', $inputs['types']);
         }
 
         $this->setEntities();
 
-        return $instance;
+        return $this;
     }
 
     private function ajaxSearch($request)
@@ -188,24 +187,24 @@ class SearchOptions
 
     private function setEntities()
     {
-        $this->entities = collect($this->getEntityTypesToSearch($this->whichEntityTypeToSearch, $this));
+        $this->entities = collect($this->getEntityTypesToSearch());
     }
 
-    private function getEntityTypesToSearch($whichEntityTypeToSearch, $searchOptions){
+    private function getEntityTypesToSearch(){
         $types = $this->searchableEntities;
-        if ($this->existFilterType($searchOptions)) {
-            $types = explode('|', $searchOptions->filters['type']);
-        } else if($whichEntityTypeToSearch !== 'all') {
-            $types = $whichEntityTypeToSearch;
+        if ($this->existFilterType()) {
+            $types = explode('|', $this->filters['type']);
+        } else if($this->whichEntityTypeToSearch !== 'all') {
+            $types = $this->whichEntityTypeToSearch;
         }
 
         return $this->filterEntityTypes($types);
     }
 
-    private function existFilterType($searchOptions)
+    private function existFilterType()
     {
-        return   isset($searchOptions->filters['type'])
-            && ( ! empty($searchOptions->filters['type']) );
+        return   isset($this->filters['type'])
+            && ( ! empty($this->filters['type']) );
     }
 
     private function filterEntityTypes($entityTypes)
