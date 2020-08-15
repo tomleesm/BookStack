@@ -5,9 +5,24 @@ use Tests\TestCase;
 
 class SearchOptionsTest extends TestCase
 {
+    private function createRequest(
+        $method,
+        $content,
+        $uri = '/',
+        $server = ['CONTENT_TYPE' => 'text/html'],
+        $parameters = [],
+        $cookies = [],
+        $files = []
+    ) {
+        $request = new \Illuminate\Http\Request;
+        return $request->createFromBase(\Symfony\Component\HttpFoundation\Request::create($uri, $method, $parameters, $cookies, $files, $server, $content));
+    }
+
     public function test_from_string_parses_a_search_string_properly()
     {
-        $options = (new SearchOptions)->fromString('cat "dog" [tag=good] {is_tree}');
+        $url = '/search?term=' . URLEncode('cat "dog" [tag=good] {is_tree}');
+        $request = $this->createRequest('GET', '', $url);
+        $options = (new SearchOptions)->fromRequest($request, 'all');
 
         $this->assertEquals(['cat'], $options->searches);
         $this->assertEquals(['dog'], $options->exacts);
@@ -32,12 +47,14 @@ class SearchOptionsTest extends TestCase
 
     public function test_correct_filter_values_are_set_from_string()
     {
-        $opts = (new SearchOptions)->fromString('{is_tree} {name:dan} {cat:happy}');
+        $url = '/search?term=' . URLEncode('{is_tree} {name:dan} {cat:happy}');
+        $request = $this->createRequest('GET', '', $url);
+        $options = (new SearchOptions)->fromRequest($request, 'all');
 
         $this->assertEquals([
             'is_tree' => '',
             'name' => 'dan',
             'cat' => 'happy',
-        ], $opts->filters);
+        ], $options->filters);
     }
 }
