@@ -27,16 +27,29 @@ class SearchOptions
     public $filters = [];
 
     /**
+     * entities to search
+     *
+     * @var Illuminate\Support\Collection
+     */
+    private $entities = null;
+
+    private $whichEntityTypeToSearch = null;
+
+    private $searchableEntities = ['page', 'chapter', 'book', 'bookshelf'];
+
+    /**
      * Create a new instance from a search string.
      */
     public function fromString(string $search): SearchOptions
     {
         $decoded = $this->decode($search);
-        $instance = new self();
         foreach ($decoded as $type => $value) {
-            $instance->$type = $value;
+            $this->$type = $value;
         }
-        return $instance;
+
+        $this->setEntities();
+
+        return $this;
     }
 
     /**
@@ -44,8 +57,10 @@ class SearchOptions
      * Will look for a classic string term and use that
      * Otherwise we'll use the details from an advanced search form.
      */
-    public function fromRequest(Request $request): SearchOptions
+    public function fromRequest(Request $request, $whichEntityTypeToSearch = []): SearchOptions
     {
+        $this->whichEntityTypeToSearch = $whichEntityTypeToSearch;
+
         // search for nothing
         if (!$request->has('search') && !$request->has('term')) {
             return $this->fromString('');
@@ -153,6 +168,8 @@ class SearchOptions
             $instance->filters['type'] = implode('|', $inputs['types']);
         }
 
+        $this->setEntities();
+
         return $instance;
     }
 
@@ -164,4 +181,42 @@ class SearchOptions
         return $this->fromString(($searchTerm));
     }
 
+    public function getEntities()
+    {
+        return $this->entities;
+    }
+
+    private function setEntities()
+    {
+        $this->entities = collect($this->getEntityTypesToSearch($this->whichEntityTypeToSearch, $this));
+    }
+
+    private function getEntityTypesToSearch($whichEntityTypeToSearch, $searchOptions){
+        $types = $this->searchableEntities;
+        if ($this->existFilterType($searchOptions)) {
+            $types = explode('|', $searchOptions->filters['type']);
+        } else if($whichEntityTypeToSearch !== 'all') {
+            $types = $whichEntityTypeToSearch;
+        }
+
+        return $this->filterEntityTypes($types);
+    }
+
+    private function existFilterType($searchOptions)
+    {
+        return   isset($searchOptions->filters['type'])
+            && ( ! empty($searchOptions->filters['type']) );
+    }
+
+    private function filterEntityTypes($entityTypes)
+    {
+        $validEntityTypes = [];
+        foreach ($entityTypes as $entityType) {
+            if (in_array($entityType, $this->searchableEntities)) {
+                array_push($validEntityTypes, $entityType);
+            }
+        }
+
+        return $validEntityTypes;
+    }
 }
