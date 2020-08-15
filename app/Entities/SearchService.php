@@ -58,35 +58,6 @@ class SearchService
         $this->db = $connection;
     }
 
-    private function getEntityTypesToSearch($whichEntityTypeToSearch, $searchOptions){
-        $types = array_keys($this->entityProvider->all());
-        if ($this->existFilterType($searchOptions)) {
-            $types = explode('|', $searchOptions->filters['type']);
-        } else if($whichEntityTypeToSearch !== 'all') {
-            $types = $whichEntityTypeToSearch;
-        }
-
-        return $this->filterEntityTypes($types);
-    }
-
-    private function existFilterType($searchOptions)
-    {
-        return   isset($searchOptions->filters['type'])
-            && ( ! empty($searchOptions->filters['type']) );
-    }
-
-    private function filterEntityTypes($entityTypes)
-    {
-        $validEntityTypes = [];
-        foreach ($entityTypes as $entityType) {
-            if (in_array($entityType, array_keys($this->entityProvider->all()))) {
-                array_push($validEntityTypes, $entityType);
-            }
-        }
-
-        return $validEntityTypes;
-    }
-
     /**
      * Search all entities in the system.
      * The provided count is for each entity to search,
@@ -94,12 +65,10 @@ class SearchService
      */
     public function searchEntities(string $whichEntityTypeToSearch = 'all', string $action = 'view')
     {
-
-        $searchOptions = (new SearchOptions)->fromRequest(request());
-        $entityTypesToSearch = $this->getEntityTypesToSearch($whichEntityTypeToSearch, $searchOptions);
+        $searchOptions = (new SearchOptions)->fromRequest(request(), $whichEntityTypeToSearch);
 
         $results = collect();
-        foreach ($entityTypesToSearch as $entityType) {
+        foreach ($searchOptions->getEntities() as $entityType) {
             $search = $this->buildEntitySearchQuery($searchOptions, $entityType, $action)->get();
             $results = $results->merge($search);
         }
@@ -113,12 +82,10 @@ class SearchService
      */
     public function searchBook(int $bookId): Collection
     {
-        $searchOptions = (new SearchOptions)->fromRequest(request());
-        $entityTypes = ['page', 'chapter'];
-        $entityTypesToSearch = $this->getEntityTypesToSearch($entityTypes, $searchOptions);
+        $searchOptions = (new SearchOptions)->fromRequest(request(), ['page', 'chapter']);
 
         $results = collect();
-        foreach ($entityTypesToSearch as $entityType) {
+        foreach ($searchOptions->getEntities() as $entityType) {
             $search = $this->buildEntitySearchQuery($searchOptions, $entityType)
                            ->where('book_id', '=', $bookId)
                            ->get();
@@ -133,32 +100,39 @@ class SearchService
      */
     public function searchChapter(int $chapterId): Collection
     {
-        $searchOptions = (new SearchOptions)->fromRequest(request());
-        $pages = $this->buildEntitySearchQuery($searchOptions, 'page')
+        $searchOptions = (new SearchOptions)->fromRequest(request(), ['page']);
+
+        $results = collect();
+        foreach ($searchOptions->getEntities() as $entityType) {
+            $search = $this->buildEntitySearchQuery($searchOptions, $entityType)
                       ->where('chapter_id', '=', $chapterId)
                       ->get();
+            $results = $results->merge($search);
+        }
 
-        return $pages->sortByDesc('score')->values();
+        return $results->sortByDesc('score')->values();
     }
 
     /**
      * Create a search query for an entity
      */
-    protected function buildEntitySearchQuery(SearchOptions $searchOptions, string $entityType = 'page', string $action = 'view'): EloquentBuilder
+    protected function buildEntitySearchQuery(SearchOptions $searchOptions,
+                                              string $entityType = 'page',
+                                              string $action = 'view'): EloquentBuilder
     {
         $entity = $this->entityProvider->get($entityType);
         $entitySelect = $entity->newQuery();
 
         // Handle normal search terms
         if (count($searchOptions->searches) > 0) {
-            $subQuery = $this->db->table('search_terms')->select('entity_id', 'entity_type', \DB::raw('SUM(score) as score'));
+            $subQuery = \DB::table('search_terms')->select('entity_id', 'entity_type', \DB::raw('SUM(score) as score'));
             $subQuery->where('entity_type', '=', $entity->getMorphClass());
-            $subQuery->where(function (Builder $query) use ($searchOptions) {
+            $subQuery->where(function ($query) use ($searchOptions) {
                 foreach ($searchOptions->searches as $inputTerm) {
                     $query->orWhere('term', 'like', $inputTerm .'%');
                 }
             })->groupBy('entity_type', 'entity_id');
-            $entitySelect->join(\DB::raw('(' . $subQuery->toSql() . ') as s'), function (JoinClause $join) {
+            $entitySelect->join(\DB::raw('(' . $subQuery->toSql() . ') as s'), function ($join) {
                 $join->on('id', '=', 'entity_id');
             })->selectRaw($entity->getTable().'.*, s.score')->orderBy('score', 'desc');
             $entitySelect->mergeBindings($subQuery);
@@ -166,9 +140,9 @@ class SearchService
 
         // Handle exact term matching
         if (count($searchOptions->exacts) > 0) {
-            $entitySelect->where(function (EloquentBuilder $query) use ($searchOptions, $entity) {
+            $entitySelect->where(function ($query) use ($searchOptions, $entity) {
                 foreach ($searchOptions->exacts as $inputTerm) {
-                    $query->where(function (EloquentBuilder $query) use ($inputTerm, $entity) {
+                    $query->where(function ($query) use ($inputTerm, $entity) {
                         $query->where('name', 'like', '%'.$inputTerm .'%')
                             ->orWhere($entity->textField, 'like', '%'.$inputTerm .'%');
                     });
@@ -211,7 +185,7 @@ class SearchService
     {
         preg_match("/^(.*?)((".$this->getRegexEscapedOperators().")(.*?))?$/", $tagTerm, $tagSplit);
 
-        $query->whereHas('tags', function (EloquentBuilder $query) use ($tagSplit) {
+        $query->whereHas('tags', function ($query) use ($tagSplit) {
             $tagName = $tagSplit[1];
             $tagOperator = count($tagSplit) > 2 ? $tagSplit[3] : '';
             $tagValue = count($tagSplit) > 3 ? $tagSplit[4] : '';

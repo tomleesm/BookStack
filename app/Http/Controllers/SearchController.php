@@ -35,7 +35,7 @@ class SearchController extends Controller
      */
     public function search(Request $request)
     {
-        $searchOpts = (new SearchOptions)->fromRequest($request);
+        $searchOpts = (new SearchOptions)->fromRequest($request, 'all');
         $fullSearchString = $searchOpts->toString();
         $this->setPageTitle(trans('entities.search_for_term', ['term' => $fullSearchString]));
 
