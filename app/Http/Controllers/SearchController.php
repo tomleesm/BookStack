@@ -39,7 +39,7 @@ class SearchController extends Controller
         $fullSearchString = $searchOpts->toString();
         $this->setPageTitle(trans('entities.search_for_term', ['term' => $fullSearchString]));
 
-        $results = $this->searchService->searchEntities('all');
+        $results = $this->searchService->searchEntities();
         $results = Collection::paginate($results, 20);
 
         return view('search.all', [
@@ -85,7 +85,7 @@ class SearchController extends Controller
         if (empty($searchTerm)) {
             $entities = $this->viewService->getPopular(20, 0, $entityTypes, $permission);
         } else {
-            $entities = $this->searchService->searchEntities('all', $permission);
+            $entities = $this->searchService->searchEntities($permission);
         }
 
         $entities = Collection::paginate($entities, 20);

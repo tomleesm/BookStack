@@ -63,9 +63,9 @@ class SearchService
      * The provided count is for each entity to search,
      * Total returned could can be larger and not guaranteed.
      */
-    public function searchEntities(string $whichEntityTypeToSearch = 'all', string $action = 'view')
+    public function searchEntities(string $action = 'view')
     {
-        $searchOptions = (new SearchOptions)->fromRequest(request(), $whichEntityTypeToSearch);
+        $searchOptions = (new SearchOptions)->fromRequest(request(), ['page', 'chapter', 'book', 'bookshelf']);
 
         $results = collect();
         foreach ($searchOptions->getEntities() as $entityType) {
