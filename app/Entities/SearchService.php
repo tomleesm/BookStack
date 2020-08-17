@@ -142,7 +142,7 @@ class SearchService
         if (count($searchOptions->exacts) > 0) {
             $entitySelect->where(function ($query) use ($searchOptions, $entity) {
                 foreach ($searchOptions->exacts as $inputTerm) {
-                    $query->where(function ($query) use ($inputTerm, $entity) {
+                    $query->orWhere(function ($query) use ($inputTerm, $entity) {
                         $query->where('name', 'like', '%'.$inputTerm .'%')
                             ->orWhere($entity->textField, 'like', '%'.$inputTerm .'%');
                     });
